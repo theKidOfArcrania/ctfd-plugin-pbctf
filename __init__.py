@@ -10,6 +10,11 @@ from CTFd.utils.decorators import during_ctf_time_only
 from sqlalchemy.sql import and_
 
 def load(app):
+    def nonce():
+        from flask import session
+        return session.get('nonce')
+    app.jinja_env.globals.update(nonce=nonce)
+
     @app.route("/OneSignalSDKWorker.js", methods=["GET"])
     def worker():
         filename = safe_join(app.root_path, 'themes', 'tsgctf', 'static', 'OneSignalSDKWorker.js')
