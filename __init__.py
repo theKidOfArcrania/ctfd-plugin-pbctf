@@ -1,3 +1,6 @@
+import glob
+import importlib
+import os.path
 from flask import send_file, jsonify
 from flask.helpers import safe_join
 from CTFd.models import Challenges, Solves, Pages, db
@@ -10,15 +13,27 @@ from CTFd.utils.decorators import during_ctf_time_only
 from sqlalchemy.sql import and_
 
 def load(app):
+    # Load all the subcomponents (which resides in this directory)
+    this_dir = os.path.abspath(os.path.dirname(__file__))
+    modules = sorted(glob.glob(this_dir + '/*.py'))
+    blacklist = {'__pycache__', '__init__.py'}
+    for mod in modules:
+        mod = os.path.basename(mod)
+        if mod in blacklist: continue
+        mod = '.' + mod[:-3]
+        mod = importlib.import_module(mod, package=__package__)
+        mod.load(app)
+        print(' * pbctf: Loaded subcomponent, %s' % mod)
+
     def nonce():
         from flask import session
         return session.get('nonce')
     app.jinja_env.globals.update(nonce=nonce)
 
-    @app.route("/OneSignalSDKWorker.js", methods=["GET"])
-    def worker():
-        filename = safe_join(app.root_path, 'themes', 'tsgctf', 'static', 'OneSignalSDKWorker.js')
-        return send_file(filename)
+    #@app.route("/OneSignalSDKWorker.js", methods=["GET"])
+    #def worker():
+    #    filename = safe_join(app.root_path, 'themes', 'tsgctf', 'static', 'OneSignalSDKWorker.js')
+    #    return send_file(filename)
 
     @app.route("/api/v1/dates", methods=["GET"])
     def dates():
